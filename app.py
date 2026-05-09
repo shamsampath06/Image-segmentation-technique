@@ -21,6 +21,7 @@ import os
 import io
 import json
 import time
+import gdown
 import numpy as np
 import streamlit as st
 from PIL import Image
@@ -48,20 +49,26 @@ os.makedirs("training", exist_ok=True)
 
 # ── Auto-download model if running on cloud (Render) ──────────────────────────
 def _download_model():
-    """Download model from Google Drive if MODEL_DOWNLOAD_URL env var is set."""
-    url = os.environ.get("MODEL_DOWNLOAD_URL", "").strip()
-    if not url:
-        return
+    """Download model weights from Google Drive if not present locally."""
     if os.path.exists(MODEL_PATH):
         return
+
+    # 1) Hardcoded fallback – always works without any env var configuration
+    file_id = "18MG2wqxiP0Bn98f2kQf8bQCOB2FNeV4N"
+    url = f"https://drive.google.com/uc?id={file_id}"
+
+    # 2) Allow override via environment variable (optional)
+    env_url = os.environ.get("MODEL_DOWNLOAD_URL", "").strip()
+    if env_url:
+        url = env_url
+
     try:
-        st.info("⬇️ Downloading model weights... please wait (~360 MB)")
-        import gdown
+        st.info("⬇️ Downloading model weights… please wait (~360 MB)")
         gdown.download(url, MODEL_PATH, quiet=False, fuzzy=True)
         st.success("✅ Model downloaded successfully!")
         st.rerun()
     except Exception as e:
-        st.error(f"Model download failed: {e}. Set MODEL_DOWNLOAD_URL env var on Render.")
+        st.error(f"Model download failed: {e}")
 
 _download_model()
 
